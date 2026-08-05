@@ -34,12 +34,18 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([file(credentialsId: 'k8s-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                    sh """
-                        export KUBECONFIG=\$KUBECONFIG_FILE
-                        kubectl set image deployment/${DEPLOYMENT_NAME} ${DEPLOYMENT_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -n ${KUBE_NAMESPACE}
-                        kubectl rollout status deployment/${DEPLOYMENT_NAME} -n ${KUBE_NAMESPACE} --timeout=120s
+    steps {
+        withCredentials([string(credentialsId: 'k8s-kubeconfig-b64', variable: 'KUBECONFIG_B64')]) {
+            sh """
+                echo "\$KUBECONFIG_B64" | tr -d ' \\n' | base64 -d --ignore-garbage > /tmp/kubeconfig-\$BUILD_NUMBER.yaml
+                export KUBECONFIG=/tmp/kubeconfig-\$BUILD_NUMBER.yaml
+                kubectl set image deployment/${DEPLOYMENT_NAME} ${DEPLOYMENT_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -n ${KUBE_NAMESPACE}
+                kubectl rollout status deployment/${DEPLOYMENT_NAME} -n ${KUBE_NAMESPACE} --timeout=120s
+                rm -f /tmp/kubeconfig-\$BUILD_NUMBER.yaml
+            """
+        }
+    }
+}
                     """
                 }
             }
