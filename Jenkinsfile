@@ -44,7 +44,7 @@ pipeline {
                         kubectl set image deployment/${DEPLOYMENT_NAME} ${DEPLOYMENT_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -n ${KUBE_NAMESPACE}
                         kubectl rollout status deployment/${DEPLOYMENT_NAME} -n ${KUBE_NAMESPACE} --timeout=120s
                         rm -f /tmp/kubeconfig-\$BUILD_NUMBER.yaml
-                    """
+                """
                 }
             }
         }
