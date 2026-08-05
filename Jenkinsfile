@@ -34,14 +34,22 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([string(credentialsId: 'k8s-kubeconfig-b64', variable: 'KUBECONFIG_B64')]) {
-                    sh """
-                        echo "\$KUBECONFIG_B64" | tr -d ' \\n' | base64 -d --ignore-garbage > /tmp/kubeconfig-\$BUILD_NUMBER.yaml
-                        export KUBECONFIG=/tmp/kubeconfig-\$BUILD_NUMBER.yaml
-                        kubectl set image deployment/${DEPLOYMENT_NAME} ${DEPLOYMENT_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -n ${KUBE_NAMESPACE}
-                        kubectl rollout status deployment/${DEPLOYMENT_NAME} -n ${KUBE_NAMESPACE} --timeout=120s
-                        rm -f /tmp/kubeconfig-\$BUILD_NUMBER.yaml
+    steps {
+        withCredentials([string(credentialsId: 'k8s-kubeconfig-b64', variable: 'KUBECONFIG_B64')]) {
+            sh """
+                echo "\$KUBECONFIG_B64" | tr -d ' \\n' | base64 -d --ignore-garbage > /tmp/kubeconfig-\$BUILD_NUMBER.yaml
+                echo "DEBUG taille fichier decode:"
+                wc -c /tmp/kubeconfig-\$BUILD_NUMBER.yaml
+                echo "DEBUG md5sum du fichier:"
+                md5sum /tmp/kubeconfig-\$BUILD_NUMBER.yaml
+                export KUBECONFIG=/tmp/kubeconfig-\$BUILD_NUMBER.yaml
+                kubectl set image deployment/${DEPLOYMENT_NAME} ${DEPLOYMENT_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -n ${KUBE_NAMESPACE}
+                kubectl rollout status deployment/${DEPLOYMENT_NAME} -n ${KUBE_NAMESPACE} --timeout=120s
+                rm -f /tmp/kubeconfig-\$BUILD_NUMBER.yaml
+            """
+        }
+    }
+}
                     """
                 }
             }
